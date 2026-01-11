@@ -13,6 +13,7 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
+import com.example.pulse.LockScreenActivity
 import com.example.pulse.MainActivity
 import com.example.pulse.R
 import com.example.pulse.data.AcknowledgementEntity
@@ -34,6 +35,7 @@ class PulseForegroundService : Service() {
     private val binder = LocalBinder()
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var wakeLock: PowerManager.WakeLock? = null
+    private var screenWakeLock: PowerManager.WakeLock? = null
 
     private lateinit var database: AppDatabase
     private lateinit var vibrationManager: VibrationManager
@@ -68,9 +70,13 @@ class PulseForegroundService : Service() {
              handleKeyPress(keyCode)
         }
 
-        // WakeLock
+        // WakeLocks
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Pulse::TimerWakeLock")
+        screenWakeLock = powerManager.newWakeLock(
+            PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
+            "Pulse::ScreenWakeLock"
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -128,6 +134,7 @@ class PulseForegroundService : Service() {
         
         stopForeground(true)
         if (wakeLock?.isHeld == true) wakeLock?.release()
+        if (screenWakeLock?.isHeld == true) screenWakeLock?.release()
         
         updateUI()
     }
@@ -149,6 +156,14 @@ class PulseForegroundService : Service() {
         safetyTimeoutJob?.cancel()
         vibrationManager.stop()
         PulseAccessibilityService.isInterceptionEnabled = false
+        
+        // Dismiss lock screen activity
+        sendBroadcast(Intent(LockScreenActivity.ACTION_DISMISS))
+        
+        // Release screen wake lock
+        if (screenWakeLock?.isHeld == true) {
+            screenWakeLock?.release()
+        }
         
         updateNotification("Paused")
         updateUI()
@@ -189,6 +204,16 @@ class PulseForegroundService : Service() {
         timeRemaining = 0
         updateUI()
         
+        // Wake the screen and bring lock screen activity to foreground
+        screenWakeLock?.acquire(90_000) // 90 second timeout
+        
+        // Launch LockScreenActivity (minimal overlay)
+        val intent = Intent(this, LockScreenActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or 
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        startActivity(intent)
+        
         vibrationManager.startAlarm()
         PulseAccessibilityService.isInterceptionEnabled = true
         android.util.Log.d("PulseForeground", "Vibration mode entered, interception enabled: ${PulseAccessibilityService.isInterceptionEnabled}")
@@ -210,6 +235,29 @@ class PulseForegroundService : Service() {
         safetyTimeoutJob?.cancel()
         vibrationManager.stop()
         PulseAccessibilityService.isInterceptionEnabled = false
+        
+        // Dismiss lock screen activity
+        sendBroadcast(Intent(LockScreenActivity.ACTION_DISMISS))
+        
+        // Release screen wake lock and turn screen off
+        if (screenWakeLock?.isHeld == true) {
+            screenWakeLock?.release()
+        }
+        
+        // Turn screen off after a short delay
+        scope.launch {
+            delay(500) // Give time for activity to dismiss
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                // Request screen to go to sleep
+                try {
+                    val method = powerManager.javaClass.getMethod("goToSleep", Long::class.javaPrimitiveType)
+                    method.invoke(powerManager, android.os.SystemClock.uptimeMillis())
+                } catch (e: Exception) {
+                    android.util.Log.e("PulseForeground", "Failed to turn off screen", e)
+                }
+            }
+        }
         
         // Record Stat
         scope.launch(Dispatchers.IO) {
