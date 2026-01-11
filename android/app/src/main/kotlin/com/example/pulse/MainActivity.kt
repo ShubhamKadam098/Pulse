@@ -211,11 +211,12 @@ class MainActivity: FlutterActivity() {
 
     private fun getStatusMap(): Map<String, Any> {
         val s = pulseService
-        if (s == null) return mapOf("state" to "IDLE", "timeRemaining" to 0)
+        if (s == null) return mapOf("state" to "IDLE", "timeRemaining" to 0, "acknowledgements" to 0)
         
         return mapOf(
             "state" to s.currentState.name,
-            "timeRemaining" to s.timeRemaining
+            "timeRemaining" to s.timeRemaining,
+            "acknowledgements" to s.sessionAcknowledgements
         )
     }
 

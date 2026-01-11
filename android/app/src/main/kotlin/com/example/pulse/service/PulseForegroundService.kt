@@ -47,6 +47,8 @@ class PulseForegroundService : Service() {
         private set
     var intervalSeconds: Int = 0
         private set
+    var sessionAcknowledgements: Int = 0
+        private set
     private var currentSessionId: Long = -1
 
     // Timer Job
@@ -102,6 +104,7 @@ class PulseForegroundService : Service() {
         
         intervalSeconds = seconds
         timeRemaining = seconds
+        sessionAcknowledgements = 0
         
         // Create Session
         scope.launch(Dispatchers.IO) {
@@ -258,6 +261,7 @@ class PulseForegroundService : Service() {
         }
         
         // Record Stat
+        sessionAcknowledgements++
         scope.launch(Dispatchers.IO) {
             database.pulseDao().insertAcknowledgement(
                 AcknowledgementEntity(
