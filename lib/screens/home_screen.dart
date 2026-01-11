@@ -357,7 +357,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           hintStyle: TextStyle(color: Colors.white12),
                           border: InputBorder.none,
                         ),
+                        textInputAction: TextInputAction.done,
                         onChanged: (v) => val = int.tryParse(v) ?? val,
+                        onSubmitted: (v) {
+                          val = int.tryParse(v) ?? val;
+                          Navigator.pop(context, val);
+                        },
                       ),
                       actions: [
                         TextButton(
