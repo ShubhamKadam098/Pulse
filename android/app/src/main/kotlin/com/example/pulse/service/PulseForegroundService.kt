@@ -3,6 +3,7 @@ package com.example.pulse.service
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.KeyguardManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -204,15 +205,18 @@ class PulseForegroundService : Service() {
         timeRemaining = 0
         updateUI()
         
-        // Wake the screen and bring lock screen activity to foreground
-        screenWakeLock?.acquire(90_000) // 90 second timeout
-        
-        // Launch LockScreenActivity (minimal overlay)
-        val intent = Intent(this, LockScreenActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or 
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP
+        // Wake the screen and bring lock screen activity to foreground ONLY if locked
+        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        if (keyguardManager.isKeyguardLocked) {
+            screenWakeLock?.acquire(90_000) // 90 second timeout
+            
+            // Launch LockScreenActivity (minimal overlay)
+            val intent = Intent(this, LockScreenActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or 
+                        Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+            startActivity(intent)
         }
-        startActivity(intent)
         
         vibrationManager.startAlarm()
         PulseAccessibilityService.isInterceptionEnabled = true
@@ -239,24 +243,16 @@ class PulseForegroundService : Service() {
         // Dismiss lock screen activity
         sendBroadcast(Intent(LockScreenActivity.ACTION_DISMISS))
         
-        // Release screen wake lock and turn screen off
+        // Release screen wake lock
         if (screenWakeLock?.isHeld == true) {
             screenWakeLock?.release()
         }
-        
-        // Turn screen off after a short delay
-        scope.launch {
-            delay(500) // Give time for activity to dismiss
-            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                // Request screen to go to sleep
-                try {
-                    val method = powerManager.javaClass.getMethod("goToSleep", Long::class.javaPrimitiveType)
-                    method.invoke(powerManager, android.os.SystemClock.uptimeMillis())
-                } catch (e: Exception) {
-                    android.util.Log.e("PulseForeground", "Failed to turn off screen", e)
-                }
-            }
+
+        // Soft turn off screen via Accessibility (allows fingerprint)
+        // ONLY if the screen was locked to begin with
+        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        if (keyguardManager.isKeyguardLocked) {
+            com.example.pulse.service.PulseAccessibilityService.lockScreen()
         }
         
         // Record Stat

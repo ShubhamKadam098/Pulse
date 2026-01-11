@@ -66,6 +66,18 @@ class MainActivity: FlutterActivity() {
                     startActivity(intent)
                     result.success(true)
                 }
+                "checkDeviceAdmin" -> {
+                    result.success(isDeviceAdminEnabled())
+                }
+                "openDeviceAdminSettings" -> {
+                    val adminComponent = ComponentName(this, PulseDeviceAdminReceiver::class.java)
+                    val intent = Intent(android.app.admin.DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                        putExtra(android.app.admin.DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent)
+                        putExtra(android.app.admin.DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Pulse requires this to turn off the screen after you acknowledge reminders.")
+                    }
+                    startActivity(intent)
+                    result.success(true)
+                }
                 "getStats" -> {
                     scope.launch {
                         val stats = withContext(Dispatchers.IO) {
@@ -212,5 +224,11 @@ class MainActivity: FlutterActivity() {
             }
         }
         return false
+    }
+
+    private fun isDeviceAdminEnabled(): Boolean {
+        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as android.app.admin.DevicePolicyManager
+        val adminComponent = ComponentName(this, PulseDeviceAdminReceiver::class.java)
+        return dpm.isAdminActive(adminComponent)
     }
 }

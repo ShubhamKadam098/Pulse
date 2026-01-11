@@ -1,6 +1,7 @@
 package com.example.pulse.service
 
 import android.accessibilityservice.AccessibilityService
+import android.os.Build
 import android.util.Log
 import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
@@ -15,10 +16,19 @@ class PulseAccessibilityService : AccessibilityService() {
         
         // Master switch. If false, we do nothing.
         var isInterceptionEnabled: Boolean = false
+
+        private var instance: PulseAccessibilityService? = null
+
+        fun lockScreen() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                instance?.performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+            }
+        }
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        instance = this
         Log.d(TAG, "Accessibility Service Connected")
     }
 

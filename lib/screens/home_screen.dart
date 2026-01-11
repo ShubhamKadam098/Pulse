@@ -51,8 +51,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _checkPermissions() async {
-    final enabled = await NativeBridge.checkAccessibility();
-    if (mounted) setState(() => _accessibilityEnabled = enabled);
+    final acc = await NativeBridge.checkAccessibility();
+    if (mounted) {
+      setState(() {
+        _accessibilityEnabled = acc;
+      });
+    }
   }
 
   Future<void> _syncState() async {
@@ -160,20 +164,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               if (!_accessibilityEnabled)
                 GestureDetector(
                   onTap: () => NativeBridge.openAccessibilitySettings(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.withOpacity(0.3)),
-                    ),
-                    child: const Text(
-                      "Hardware control requires Accessibility. Tap to enable.",
-                      style: TextStyle(color: Colors.redAccent, fontSize: 12),
-                    ),
+                  child: _buildWarning(
+                    "Hardware control requires Accessibility. Tap to enable.",
                   ),
                 ),
 
@@ -225,6 +217,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
       ],
+    );
+  }
+
+  Widget _buildWarning(String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.withOpacity(0.3)),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 

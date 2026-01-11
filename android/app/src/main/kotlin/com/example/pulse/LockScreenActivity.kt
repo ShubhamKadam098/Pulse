@@ -56,7 +56,15 @@ class LockScreenActivity : Activity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(dismissReceiver)
+        
+        // Clear keep screen on flag to allow screen to turn off
+        window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        
+        try {
+            unregisterReceiver(dismissReceiver)
+        } catch (e: Exception) {
+            // Receiver might not be registered
+        }
     }
 
     companion object {

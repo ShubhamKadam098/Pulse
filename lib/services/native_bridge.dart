@@ -73,4 +73,20 @@ class NativeBridge {
       return {'total': 0};
     }
   }
+
+  static Future<bool> checkDeviceAdmin() async {
+    try {
+      return await _channel.invokeMethod('checkDeviceAdmin');
+    } catch (e) {
+      return false;
+    }
+  }
+
+  static Future<void> openDeviceAdminSettings() async {
+    try {
+      await _channel.invokeMethod('openDeviceAdminSettings');
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
 }
