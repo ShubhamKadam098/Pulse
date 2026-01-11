@@ -7,7 +7,8 @@ import androidx.room.PrimaryKey
 data class AcknowledgementEntity(
     @PrimaryKey(autoGenerate = true) var id: Long = 0,
     val sessionId: Long,
-    val timestamp: Long
+    val timestamp: Long,
+    val durationSeconds: Int = 0
 )
 
 @Entity(tableName = "sessions")

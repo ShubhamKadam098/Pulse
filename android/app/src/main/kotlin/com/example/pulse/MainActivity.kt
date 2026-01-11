@@ -86,47 +86,53 @@ class MainActivity: FlutterActivity() {
                     scope.launch {
                         val stats = withContext(Dispatchers.IO) {
                             val db = AppDatabase.getDatabase(this@MainActivity)
-                            val timestamps = db.pulseDao().getAllAcknowledgementTimestamps()
+                            val allAcks = db.pulseDao().getAllAcknowledgements()
                             
                             val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
                             val todayStr = sdf.format(java.util.Date())
                             
-                            val dates = timestamps.map { sdf.format(java.util.Date(it)) }
+                            val dateToSeconds = mutableMapOf<String, Int>()
+                            var totalSeconds = 0
                             
-                            val todayCount = dates.count { it == todayStr }
+                            for (ack in allAcks) {
+                                val dStr = sdf.format(java.util.Date(ack.timestamp))
+                                val duration = if (ack.durationSeconds > 0) ack.durationSeconds else 0
+                                dateToSeconds[dStr] = (dateToSeconds[dStr] ?: 0) + duration
+                                totalSeconds += duration
+                            }
                             
-                            // Weekly
+                            val todayMinutes = (dateToSeconds[todayStr] ?: 0) / 60
+                            val totalMinutes = totalSeconds / 60
+                            
+                            // Weekly Minutes
                             val cal = java.util.Calendar.getInstance()
                             val weekly = ArrayList<Int>()
-                            // Last 7 days including today? Or 6 days ago + today.
-                            // 0..6: 0 is today, 6 is 6 days ago.
                             for (i in 0..6) {
                                 cal.time = java.util.Date()
                                 cal.add(java.util.Calendar.DAY_OF_YEAR, - (6 - i))
                                 val dStr = sdf.format(cal.time)
-                                weekly.add(dates.count { it == dStr })
+                                weekly.add((dateToSeconds[dStr] ?: 0) / 60)
                             }
                             
-                            // Streaks - Calculate using sorted unique strings
-                            val uniqueDates = dates.distinct().sorted() // Ascending strings works for yyyy-MM-dd
+                            // Streaks - based on unique dates with any activity
+                            val activeDates = dateToSeconds.keys.filter { (dateToSeconds[it] ?: 0) > 0 }.sorted()
                             
                             var maxStreak = 0
                             var curStreakCalc = 0
                             var prevStr: String? = null
                             
-                            // Helper to check if s2 is day after s1
                             fun isNextDay(s1: String, s2: String): Boolean {
-                                val d1 = sdf.parse(s1)
-                                val d2 = sdf.parse(s2)
-                                val diff = d2.time - d1.time
-                                // Approx 24 hours + leeway
-                                // 86400000 ms
-                                // Check if diff is around 1 day
-                                val days = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(diff)
-                                return days == 1L
+                                try {
+                                    val d1 = sdf.parse(s1)
+                                    val d2 = sdf.parse(s2)
+                                    if (d1 == null || d2 == null) return false
+                                    val diff = d2.time - d1.time
+                                    val days = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(diff + 3600000) // Leeway for DST
+                                    return days == 1L
+                                } catch (e: Exception) { return false }
                             }
 
-                            for (d in uniqueDates) {
+                            for (d in activeDates) {
                                 if (prevStr != null && isNextDay(prevStr!!, d)) {
                                     curStreakCalc++
                                 } else {
@@ -137,38 +143,31 @@ class MainActivity: FlutterActivity() {
                             }
                             maxStreak = Math.max(maxStreak, curStreakCalc)
                             
-                            // Current Streak
                             var currentStreak = 0
-                            if (uniqueDates.isNotEmpty()) {
-                                // Check today or yesterday
-                                var lastActive = uniqueDates.last() // Last active date
-                                
+                            if (activeDates.isNotEmpty()) {
+                                val lastActive = activeDates.last()
                                 val todayDate = sdf.parse(todayStr)
                                 val lastActiveDate = sdf.parse(lastActive)
-                                
-                                val diff = todayDate.time - lastActiveDate.time
-                                val daysDiff = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(diff)
-                                
-                                if (daysDiff <= 1) {
-                                    // Streak is alive
-                                    // Count backwards from lastActive
-                                    currentStreak = 1
-                                    var currentCheck = lastActive
-                                    for (i in (uniqueDates.size - 2) downTo 0) {
-                                        val prev = uniqueDates[i]
-                                        if (isNextDay(prev, currentCheck)) {
-                                            currentStreak++
-                                            currentCheck = prev
-                                        } else {
-                                            break
+                                if (todayDate != null && lastActiveDate != null) {
+                                    val diff = todayDate.time - lastActiveDate.time
+                                    val daysDiff = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(diff + 3600000)
+                                    if (daysDiff <= 1) {
+                                        currentStreak = 1
+                                        var currentCheck = lastActive
+                                        for (i in (activeDates.size - 2) downTo 0) {
+                                            val prev = activeDates[i]
+                                            if (isNextDay(prev, currentCheck)) {
+                                                currentStreak++
+                                                currentCheck = prev
+                                            } else break
                                         }
                                     }
                                 }
                             }
 
                             mapOf(
-                                "total" to timestamps.size,
-                                "today" to todayCount,
+                                "total" to totalMinutes,
+                                "today" to todayMinutes,
                                 "streak" to currentStreak,
                                 "longestStreak" to maxStreak,
                                 "weekly" to weekly

@@ -9,24 +9,38 @@ class StatsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Statistics"),
+        title: Text(
+          "STATISTICS",
+          style: GoogleFonts.outfit(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+            fontSize: 16,
+          ),
+        ),
+        centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: NativeBridge.getStats(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: Color(0xFF00E070)),
+            );
           }
 
           final data = snapshot.data ?? {};
-          final total = data['total'] ?? 0;
-          final today = data['today'] ?? 0;
+          final totalMins = data['total'] ?? 0;
+          final todayMins = data['today'] ?? 0;
           final streak = data['streak'] ?? 0;
           final longest = data['longestStreak'] ?? 0;
-          // weekly: [0, 2, 5, 1, ...] for last 7 days
           final weekly =
               (data['weekly'] as List<dynamic>?)
                   ?.map((e) => e as int)
@@ -34,18 +48,28 @@ class StatsScreen extends StatelessWidget {
               [0, 0, 0, 0, 0, 0, 0];
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildGrid(context, total, today, streak, longest),
-                const SizedBox(height: 32),
+                _buildSummaryCards(totalMins, todayMins, streak, longest),
+                const SizedBox(height: 48),
                 Text(
-                  "Last 7 Days",
-                  style: GoogleFonts.outfit(fontSize: 18, color: Colors.grey),
+                  "FOCUS ACTIVITY",
+                  style: GoogleFonts.outfit(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white24,
+                    letterSpacing: 2,
+                  ),
                 ),
                 const SizedBox(height: 16),
-                _buildChart(weekly),
+                _buildChartContainer(weekly),
+                const SizedBox(height: 40),
               ],
             ),
           );
@@ -54,74 +78,152 @@ class StatsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGrid(
-    BuildContext context,
-    int total,
-    int today,
-    int streak,
-    int longest,
-  ) {
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+  Widget _buildSummaryCards(int total, int today, int streak, int longest) {
+    return Column(
       children: [
-        _buildCard("Today", today.toString()),
-        _buildCard("Streak", "$streak days"),
-        _buildCard("Longest", "$longest days"),
-        _buildCard("Total", total.toString()),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                "TODAY",
+                "$today",
+                "MINS",
+                const Color(0xFF00E070),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildStatCard(
+                "STREAK",
+                "$streak",
+                "DAYS",
+                const Color(0xFF007AFF),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                "FOCUS TIME",
+                "$total",
+                "TOTAL MINS",
+                Colors.orangeAccent,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildStatCard(
+                "LONGEST",
+                "$longest",
+                "DAYS",
+                Colors.purpleAccent,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _buildCard(String title, String value) {
+  Widget _buildStatCard(String title, String value, String unit, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(title, style: const TextStyle(color: Colors.grey, fontSize: 14)),
-          const SizedBox(height: 8),
           Text(
-            value,
+            title,
             style: GoogleFonts.outfit(
-              fontSize: 32,
+              color: Colors.white24,
+              fontSize: 11,
               fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
             ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.outfit(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withOpacity(0.9),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                unit,
+                style: GoogleFonts.outfit(
+                  fontSize: 10,
+                  color: color.withOpacity(0.7),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildChart(List<int> data) {
+  Widget _buildChartContainer(List<int> data) {
     return Container(
-      height: 200,
-      padding: const EdgeInsets.all(16),
+      height: 240,
+      padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: BarChart(
         BarChartData(
           alignment: BarChartAlignment.spaceAround,
-          maxY: (data.reduce((a, b) => a > b ? a : b) + 1).toDouble(),
+          maxY: (data.reduce((a, b) => a > b ? a : b) + 5).toDouble().clamp(
+            30.0,
+            1000.0,
+          ),
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              tooltipBgColor: const Color(0xFF1C1C1E),
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                return BarTooltipItem(
+                  "${rod.toY.toInt()} min",
+                  GoogleFonts.outfit(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              },
+            ),
+          ),
           titlesData: FlTitlesData(
             show: true,
             bottomTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
                 getTitlesWidget: (value, meta) {
-                  return Text(
-                    ['M', 'T', 'W', 'T', 'F', 'S', 'S'][value.toInt() % 7],
-                    style: const TextStyle(color: Colors.grey, fontSize: 10),
+                  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      days[value.toInt() % 7],
+                      style: GoogleFonts.outfit(
+                        color: Colors.white24,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   );
                 },
               ),
@@ -144,10 +246,20 @@ class StatsScreen extends StatelessWidget {
               barRods: [
                 BarChartRodData(
                   toY: data[index].toDouble(),
-                  color: const Color(0xFF00E070),
-                  width: 16,
-                  borderRadius: BorderRadius.circular(4),
-                  backDrawRodData: BackgroundBarChartRodData(show: false),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF00E070), Color(0xFF007AFF)],
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                  ),
+                  width: 14,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(6),
+                  ),
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: true,
+                    toY: 1000,
+                    color: Colors.white.withOpacity(0.02),
+                  ),
                 ),
               ],
             );

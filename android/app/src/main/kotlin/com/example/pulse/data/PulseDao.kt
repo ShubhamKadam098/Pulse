@@ -24,6 +24,9 @@ interface PulseDao {
     @Query("SELECT COUNT(*) FROM acknowledgements")
     fun getTotalAcknowledgements(): Int
 
+    @Query("SELECT * FROM acknowledgements")
+    fun getAllAcknowledgements(): List<AcknowledgementEntity>
+
     @Query("SELECT timestamp FROM acknowledgements ORDER BY timestamp ASC")
     fun getAllAcknowledgementTimestamps(): List<Long>
 }

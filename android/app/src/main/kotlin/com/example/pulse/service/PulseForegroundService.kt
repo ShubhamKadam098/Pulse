@@ -266,7 +266,8 @@ class PulseForegroundService : Service() {
             database.pulseDao().insertAcknowledgement(
                 AcknowledgementEntity(
                     sessionId = currentSessionId,
-                    timestamp = System.currentTimeMillis()
+                    timestamp = System.currentTimeMillis(),
+                    durationSeconds = intervalSeconds
                 )
             )
         }
