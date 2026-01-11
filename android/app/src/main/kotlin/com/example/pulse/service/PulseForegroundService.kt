@@ -191,6 +191,7 @@ class PulseForegroundService : Service() {
         
         vibrationManager.startAlarm()
         PulseAccessibilityService.isInterceptionEnabled = true
+        android.util.Log.d("PulseForeground", "Vibration mode entered, interception enabled: ${PulseAccessibilityService.isInterceptionEnabled}")
         updateNotification("Time's up! Acknowledge.", vibrating = true)
 
         // Safety Timeout 90s
@@ -205,6 +206,7 @@ class PulseForegroundService : Service() {
     private fun acknowledge() {
         if (currentState != State.VIBRATING) return
         
+        android.util.Log.d("PulseForeground", "Acknowledge called")
         safetyTimeoutJob?.cancel()
         vibrationManager.stop()
         PulseAccessibilityService.isInterceptionEnabled = false
@@ -229,12 +231,15 @@ class PulseForegroundService : Service() {
     }
 
     private fun handleKeyPress(keyCode: Int) {
+        android.util.Log.d("PulseForeground", "handleKeyPress called: keyCode=$keyCode, state=$currentState")
         if (currentState != State.VIBRATING) return
         
         scope.launch {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+                android.util.Log.d("PulseForeground", "Volume UP - acknowledging")
                 acknowledge()
             } else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+                android.util.Log.d("PulseForeground", "Volume DOWN - pausing")
                 pause()
             }
         }
