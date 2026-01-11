@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/native_bridge.dart';
 import 'stats_screen.dart';
@@ -15,18 +16,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _minutes = 15;
   int _seconds = 0;
   bool _accessibilityEnabled = false;
-  Map<String, dynamic> _currentState = {'state': 'IDLE', 'timeRemaining': 0};
+  Map<String, dynamic> _currentState = {
+    'state': 'IDLE',
+    'timeRemaining': 0,
+    'acknowledgements': 0,
+  };
+
+  late FixedExtentScrollController _minController;
+  late FixedExtentScrollController _secController;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _minController = FixedExtentScrollController(initialItem: _minutes);
+    _secController = FixedExtentScrollController(initialItem: _seconds);
     _init();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _minController.dispose();
+    _secController.dispose();
     super.dispose();
   }
 
@@ -158,25 +170,46 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ),
                 ),
               ] else ...[
-                // Input
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                // Unified Apple-style Picker Container
+                Stack(
+                  alignment: Alignment.center,
                   children: [
-                    _buildNumberPicker(
-                      _minutes,
-                      (v) => setState(() => _minutes = v),
-                      "MIN",
+                    // Shared selection pill background
+                    Container(
+                      height: 54,
+                      width: 260,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
-                    const SizedBox(width: 20),
-                    Text(
-                      ":",
-                      style: TextStyle(fontSize: 40, color: Colors.grey[800]),
-                    ),
-                    const SizedBox(width: 20),
-                    _buildNumberPicker(
-                      _seconds,
-                      (v) => setState(() => _seconds = v),
-                      "SEC",
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildWheelPicker(
+                          _minController,
+                          60,
+                          (v) => setState(() => _minutes = v),
+                          "MIN",
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Text(
+                            ":",
+                            style: GoogleFonts.outfit(
+                              fontSize: 32,
+                              color: Colors.white24,
+                              fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                        ),
+                        _buildWheelPicker(
+                          _secController,
+                          60,
+                          (v) => setState(() => _seconds = v),
+                          "SEC",
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -252,19 +285,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ] else ...[
                 SizedBox(
                   width: double.infinity,
-                  height: 60,
+                  height: 64,
                   child: ElevatedButton(
                     onPressed: _start,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF00E070),
+                      backgroundColor: const Color(0xFF00E070), // Focus Green
                       foregroundColor: Colors.black,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(18),
                       ),
                     ),
-                    child: const Text(
+                    child: Text(
                       "START FOCUS",
-                      style: TextStyle(fontSize: 18, letterSpacing: 1),
+                      style: GoogleFonts.outfit(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
@@ -277,22 +315,146 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildNumberPicker(int value, Function(int) onChanged, String label) {
+  Widget _buildWheelPicker(
+    FixedExtentScrollController controller,
+    int itemCount,
+    Function(int) onChanged,
+    String label,
+  ) {
     return Column(
       children: [
-        IconButton(
-          icon: const Icon(Icons.keyboard_arrow_up),
-          onPressed: () => onChanged((value + 1) % 60),
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            GestureDetector(
+              onTap: () async {
+                final result = await showDialog<int>(
+                  context: context,
+                  builder: (context) {
+                    int val = controller.selectedItem;
+                    return AlertDialog(
+                      backgroundColor: const Color(0xFF1C1C1E),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: Text(
+                        "Set $label",
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                      ),
+                      content: TextField(
+                        autofocus: true,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.outfit(
+                          color: Colors.white,
+                          fontSize: 32,
+                        ),
+                        decoration: const InputDecoration(
+                          hintText: "00",
+                          hintStyle: TextStyle(color: Colors.white12),
+                          border: InputBorder.none,
+                        ),
+                        onChanged: (v) => val = int.tryParse(v) ?? val,
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            "CANCEL",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, val),
+                          child: const Text(
+                            "SET",
+                            style: TextStyle(color: Color(0xFF00E070)),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+                if (result != null) {
+                  final finalVal = result.clamp(0, itemCount - 1);
+                  controller.animateToItem(
+                    finalVal,
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeOutQuart,
+                  );
+                  onChanged(finalVal);
+                }
+              },
+              child: SizedBox(
+                height: 200,
+                width: 100,
+                child: ListWheelScrollView.useDelegate(
+                  controller: controller,
+                  itemExtent: 48,
+                  perspective: 0.004,
+                  diameterRatio: 1.2,
+                  physics: const FixedExtentScrollPhysics(),
+                  useMagnifier: true,
+                  magnification: 1.15,
+                  onSelectedItemChanged: (index) {
+                    HapticFeedback.selectionClick();
+                    onChanged(index);
+                  },
+                  childDelegate: ListWheelChildBuilderDelegate(
+                    childCount: itemCount,
+                    builder: (context, index) {
+                      return Center(
+                        child: Text(
+                          index.toString().padLeft(2, '0'),
+                          style: GoogleFonts.outfit(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w300,
+                            color: Colors.white.withOpacity(0.9),
+                            fontFeatures: [const FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            // Masking Gradients
+            IgnorePointer(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 70,
+                    width: 100,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [Colors.black, Colors.black.withOpacity(0)],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 60),
+                  Container(
+                    height: 70,
+                    width: 100,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [Colors.black, Colors.black.withOpacity(0)],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        Text(
-          value.toString().padLeft(2, '0'),
-          style: GoogleFonts.outfit(fontSize: 60, fontWeight: FontWeight.w300),
-        ),
-        IconButton(
-          icon: const Icon(Icons.keyboard_arrow_down),
-          onPressed: () => onChanged((value - 1 + 60) % 60),
-        ),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 10)),
       ],
     );
   }
