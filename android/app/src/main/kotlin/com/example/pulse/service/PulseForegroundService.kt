@@ -81,8 +81,10 @@ class PulseForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == "STOP") {
-            stopTimer()
+        when (intent?.action) {
+            "STOP" -> stopTimer()
+            "PAUSE" -> pause()
+            "RESUME" -> resume()
         }
         return START_STICKY
     }
@@ -313,15 +315,29 @@ class PulseForegroundService : Service() {
         val stopIntent = Intent(this, PulseForegroundService::class.java).apply { action = "STOP" }
         val stopPendingIntent = PendingIntent.getService(this, 1, stopIntent, PendingIntent.FLAG_IMMUTABLE)
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val pauseIntent = Intent(this, PulseForegroundService::class.java).apply { action = "PAUSE" }
+        val pausePendingIntent = PendingIntent.getService(this, 2, pauseIntent, PendingIntent.FLAG_IMMUTABLE)
+
+        val resumeIntent = Intent(this, PulseForegroundService::class.java).apply { action = "RESUME" }
+        val resumePendingIntent = PendingIntent.getService(this, 3, resumeIntent, PendingIntent.FLAG_IMMUTABLE)
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Pulse Focus")
             .setContentText(text)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .addAction(android.R.drawable.ic_media_pause, "Stop", stopPendingIntent)
             .setOngoing(true)
-            .build()
+
+        if (currentState == State.PAUSED) {
+            builder.addAction(android.R.drawable.ic_media_play, "Resume", resumePendingIntent)
+        } else if (currentState == State.RUNNING || currentState == State.VIBRATING) {
+            builder.addAction(android.R.drawable.ic_media_pause, "Pause", pausePendingIntent)
+        }
+
+        builder.addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop", stopPendingIntent)
+
+        return builder.build()
     }
 
     private fun updateNotification(text: String, vibrating: Boolean = false) {

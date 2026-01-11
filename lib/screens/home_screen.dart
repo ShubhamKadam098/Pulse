@@ -75,6 +75,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     NativeBridge.stopTimer();
   }
 
+  void _togglePause() {
+    NativeBridge.togglePause();
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = _currentState['state'] as String;
@@ -171,27 +175,80 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
               const SizedBox(height: 32),
 
-              // Button
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: isRunning ? _stop : _start,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isRunning
-                        ? Colors.grey[900]
-                        : const Color(0xFF00E070),
-                    foregroundColor: isRunning ? Colors.white : Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              // Buttons
+              if (isRunning) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: SizedBox(
+                        height: 60,
+                        child: ElevatedButton(
+                          onPressed: _togglePause,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: state == 'PAUSED'
+                                ? const Color(0xFF00E070)
+                                : Colors.orangeAccent.withOpacity(0.2),
+                            foregroundColor: state == 'PAUSED'
+                                ? Colors.black
+                                : Colors.orangeAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            state == 'PAUSED' ? "RESUME" : "PAUSE",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 1,
+                      child: SizedBox(
+                        height: 60,
+                        child: ElevatedButton(
+                          onPressed: _stop,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey[900],
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            "STOP",
+                            style: TextStyle(fontSize: 14, letterSpacing: 1),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: ElevatedButton(
+                    onPressed: _start,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF00E070),
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      "START FOCUS",
+                      style: TextStyle(fontSize: 18, letterSpacing: 1),
                     ),
                   ),
-                  child: Text(
-                    isRunning ? "STOP" : "START FOCUS",
-                    style: const TextStyle(fontSize: 18, letterSpacing: 1),
-                  ),
                 ),
-              ),
+              ],
               const SizedBox(height: 20),
             ],
           ),

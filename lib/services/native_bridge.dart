@@ -40,6 +40,14 @@ class NativeBridge {
     }
   }
 
+  static Future<void> togglePause() async {
+    try {
+      await _channel.invokeMethod('togglePause');
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
   static Future<Map<String, dynamic>> getStatus() async {
     try {
       final result = await _channel.invokeMethod('getStatus');

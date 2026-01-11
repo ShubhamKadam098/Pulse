@@ -33,6 +33,18 @@
         android:textColor="#AAAAAA"
         android:textSize="14sp"
         android:gravity="center"
-        android:lineSpacingExtra="4dp"/>
+        android:lineSpacingExtra="4dp"
+        android:layout_marginBottom="48dp"/>
+
+    <Button
+        android:id="@+id/btn_stop"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="STOP FOCUS"
+        android:textAllCaps="true"
+        android:backgroundTint="#333333"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:letterSpacing="0.1"/>
 
 </LinearLayout>

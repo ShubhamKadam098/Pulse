@@ -55,6 +55,10 @@ class MainActivity: FlutterActivity() {
                     pulseService?.stopTimer()
                     result.success(true)
                 }
+                "togglePause" -> {
+                    pulseService?.togglePause()
+                    result.success(true)
+                }
                 "getStatus" -> {
                     result.success(getStatusMap())
                 }

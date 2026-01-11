@@ -52,6 +52,14 @@ class LockScreenActivity : Activity() {
         } else {
             registerReceiver(dismissReceiver, IntentFilter(ACTION_DISMISS))
         }
+
+        findViewById<android.widget.Button>(R.id.btn_stop).setOnClickListener {
+            val stopIntent = Intent(this, com.example.pulse.service.PulseForegroundService::class.java).apply {
+                action = "STOP"
+            }
+            startService(stopIntent)
+            finish()
+        }
     }
 
     override fun onDestroy() {
