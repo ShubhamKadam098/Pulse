@@ -41,6 +41,7 @@ class StatsScreen extends StatelessWidget {
           final todayMins = data['today'] ?? 0;
           final streak = data['streak'] ?? 0;
           final longest = data['longestStreak'] ?? 0;
+          final distractions = data['distractions'] ?? 0;
           final weekly =
               (data['weekly'] as List<dynamic>?)
                   ?.map((e) => e as int)
@@ -56,7 +57,13 @@ class StatsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSummaryCards(totalMins, todayMins, streak, longest),
+                _buildSummaryCards(
+                  totalMins,
+                  todayMins,
+                  streak,
+                  longest,
+                  distractions,
+                ),
                 const SizedBox(height: 48),
                 Text(
                   "FOCUS ACTIVITY",
@@ -78,7 +85,13 @@ class StatsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCards(int total, int today, int streak, int longest) {
+  Widget _buildSummaryCards(
+    int total,
+    int today,
+    int streak,
+    int longest,
+    int distractions,
+  ) {
     return Column(
       children: [
         Row(
@@ -123,6 +136,13 @@ class StatsScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        _buildStatCard(
+          "TOTAL DISTRACTIONS",
+          "$distractions",
+          "EVENTS",
+          Colors.redAccent,
         ),
       ],
     );

@@ -93,12 +93,17 @@ class MainActivity: FlutterActivity() {
                             
                             val dateToSeconds = mutableMapOf<String, Int>()
                             var totalSeconds = 0
+                            var totalDistractions = 0
                             
                             for (ack in allAcks) {
                                 val dStr = sdf.format(java.util.Date(ack.timestamp))
-                                val duration = if (ack.durationSeconds > 0) ack.durationSeconds else 0
-                                dateToSeconds[dStr] = (dateToSeconds[dStr] ?: 0) + duration
-                                totalSeconds += duration
+                                if (ack.wasFocusing) {
+                                    val duration = if (ack.durationSeconds > 0) ack.durationSeconds else 0
+                                    dateToSeconds[dStr] = (dateToSeconds[dStr] ?: 0) + duration
+                                    totalSeconds += duration
+                                } else {
+                                    totalDistractions++
+                                }
                             }
                             
                             val todayMinutes = (dateToSeconds[todayStr] ?: 0) / 60
@@ -170,7 +175,8 @@ class MainActivity: FlutterActivity() {
                                 "today" to todayMinutes,
                                 "streak" to currentStreak,
                                 "longestStreak" to maxStreak,
-                                "weekly" to weekly
+                                "weekly" to weekly,
+                                "distractions" to totalDistractions
                             )
                         }
                         result.success(stats)
@@ -215,7 +221,8 @@ class MainActivity: FlutterActivity() {
         return mapOf(
             "state" to s.currentState.name,
             "timeRemaining" to s.timeRemaining,
-            "acknowledgements" to s.sessionAcknowledgements
+            "acknowledgements" to s.sessionAcknowledgements,
+            "distractions" to s.sessionDistractions
         )
     }
 

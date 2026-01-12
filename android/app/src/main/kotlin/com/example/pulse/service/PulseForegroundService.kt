@@ -49,6 +49,8 @@ class PulseForegroundService : Service() {
         private set
     var sessionAcknowledgements: Int = 0
         private set
+    var sessionDistractions: Int = 0
+        private set
     private var currentSessionId: Long = -1
 
     // Timer Job
@@ -105,6 +107,7 @@ class PulseForegroundService : Service() {
         intervalSeconds = seconds
         timeRemaining = seconds
         sessionAcknowledgements = 0
+        sessionDistractions = 0
         
         // Create Session
         scope.launch(Dispatchers.IO) {
@@ -281,6 +284,50 @@ class PulseForegroundService : Service() {
         updateUI()
     }
 
+    private fun distract() {
+        if (currentState != State.VIBRATING) return
+        
+        android.util.Log.d("PulseForeground", "Distract called")
+        safetyTimeoutJob?.cancel()
+        vibrationManager.stop()
+        PulseAccessibilityService.isInterceptionEnabled = false
+        
+        // Dismiss lock screen activity
+        sendBroadcast(Intent(LockScreenActivity.ACTION_DISMISS))
+        
+        // Release screen wake lock
+        if (screenWakeLock?.isHeld == true) {
+            screenWakeLock?.release()
+        }
+
+        // Soft turn off screen via Accessibility (allows fingerprint)
+        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        if (keyguardManager.isKeyguardLocked) {
+            com.example.pulse.service.PulseAccessibilityService.lockScreen()
+        }
+        
+        // Record Stat - wasFocusing = false
+        sessionDistractions++
+        scope.launch(Dispatchers.IO) {
+            database.pulseDao().insertAcknowledgement(
+                AcknowledgementEntity(
+                    sessionId = currentSessionId,
+                    timestamp = System.currentTimeMillis(),
+                    durationSeconds = intervalSeconds,
+                    wasFocusing = false
+                )
+            )
+        }
+
+        // Reset for next loop
+        timeRemaining = intervalSeconds
+        currentState = State.RUNNING
+        
+        // Loop again
+        startLoop()
+        updateUI()
+    }
+
     private fun handleKeyPress(keyCode: Int) {
         android.util.Log.d("PulseForeground", "handleKeyPress called: keyCode=$keyCode, state=$currentState")
         if (currentState != State.VIBRATING) return
@@ -290,8 +337,8 @@ class PulseForegroundService : Service() {
                 android.util.Log.d("PulseForeground", "Volume UP - acknowledging")
                 acknowledge()
             } else if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-                android.util.Log.d("PulseForeground", "Volume DOWN - pausing")
-                pause()
+                android.util.Log.d("PulseForeground", "Volume DOWN - distraction")
+                distract()
             }
         }
     }

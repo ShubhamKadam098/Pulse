@@ -8,7 +8,8 @@ data class AcknowledgementEntity(
     @PrimaryKey(autoGenerate = true) var id: Long = 0,
     val sessionId: Long,
     val timestamp: Long,
-    val durationSeconds: Int = 0
+    val durationSeconds: Int = 0,
+    val wasFocusing: Boolean = true
 )
 
 @Entity(tableName = "sessions")
