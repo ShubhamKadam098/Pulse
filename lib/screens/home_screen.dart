@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/native_bridge.dart';
 import 'stats_screen.dart';
 
@@ -13,7 +14,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
-  int _minutes = 15;
+  int _minutes = 5;
   int _seconds = 0;
   bool _accessibilityEnabled = false;
   Map<String, dynamic> _currentState = {
@@ -53,6 +54,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void _init() async {
     await _checkPermissions();
     await _syncState();
+
+    // Load last used duration
+    final prefs = await SharedPreferences.getInstance();
+    final savedMins = prefs.getInt('last_minutes');
+    final savedSecs = prefs.getInt('last_seconds');
+
+    if (mounted && (savedMins != null || savedSecs != null)) {
+      setState(() {
+        if (savedMins != null) _minutes = savedMins;
+        if (savedSecs != null) _seconds = savedSecs;
+
+        // Update controllers to match loaded values
+        _minController.jumpToItem(_minutes);
+        _secController.jumpToItem(_seconds);
+      });
+    }
+
     NativeBridge.stateStream.listen((state) {
       if (mounted) {
         setState(() => _currentState = state);
@@ -76,9 +94,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (mounted) setState(() => _currentState = status);
   }
 
-  void _start() {
+  void _start() async {
     int totalSeconds = (_minutes * 60) + _seconds;
     if (totalSeconds > 0) {
+      // Save duration for next time
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('last_minutes', _minutes);
+      await prefs.setInt('last_seconds', _seconds);
+
       NativeBridge.startTimer(totalSeconds);
     }
   }
