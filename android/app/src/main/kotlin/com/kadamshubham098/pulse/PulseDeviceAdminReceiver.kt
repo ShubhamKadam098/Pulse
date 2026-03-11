@@ -1,4 +1,4 @@
-package com.example.pulse
+package com.kadamshubham098.pulse
 
 import android.app.admin.DeviceAdminReceiver
 import android.content.Context

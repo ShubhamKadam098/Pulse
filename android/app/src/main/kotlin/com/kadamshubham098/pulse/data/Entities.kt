@@ -1,4 +1,4 @@
-package com.example.pulse.data
+package com.kadamshubham098.pulse.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

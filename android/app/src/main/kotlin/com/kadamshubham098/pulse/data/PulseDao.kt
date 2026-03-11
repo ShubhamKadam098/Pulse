@@ -1,4 +1,4 @@
-package com.example.pulse.data
+package com.kadamshubham098.pulse.data
 
 import androidx.room.Dao
 import androidx.room.Insert

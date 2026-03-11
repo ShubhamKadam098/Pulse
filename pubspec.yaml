@@ -1,5 +1,5 @@
 name: pulse
-description: "A new Flutter project."
+description: "Android focus timer with vibration + volume-button acknowledge/distract controls."
 
 flutter_launcher_icons:
   android: "launcher_icon"

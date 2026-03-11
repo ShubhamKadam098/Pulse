@@ -1,4 +1,4 @@
-package com.example.pulse
+package com.kadamshubham098.pulse
 
 import android.app.Activity
 import android.app.KeyguardManager
@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import com.kadamshubham098.pulse.service.PulseForegroundService
 
 class LockScreenActivity : Activity() {
 
@@ -54,7 +55,7 @@ class LockScreenActivity : Activity() {
         }
 
         findViewById<android.widget.Button>(R.id.btn_stop).setOnClickListener {
-            val stopIntent = Intent(this, com.example.pulse.service.PulseForegroundService::class.java).apply {
+            val stopIntent = Intent(this, PulseForegroundService::class.java).apply {
                 action = "STOP"
             }
             startService(stopIntent)
@@ -76,6 +77,6 @@ class LockScreenActivity : Activity() {
     }
 
     companion object {
-        const val ACTION_DISMISS = "com.example.pulse.DISMISS_LOCK_SCREEN"
+        const val ACTION_DISMISS = "com.kadamshubham098.pulse.DISMISS_LOCK_SCREEN"
     }
 }

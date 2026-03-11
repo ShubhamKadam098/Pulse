@@ -1,4 +1,4 @@
-package com.example.pulse
+package com.kadamshubham098.pulse
 
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.ComponentName
@@ -7,8 +7,8 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.provider.Settings
 import android.view.accessibility.AccessibilityManager
-import com.example.pulse.data.AppDatabase
-import com.example.pulse.service.PulseForegroundService
+import com.kadamshubham098.pulse.data.AppDatabase
+import com.kadamshubham098.pulse.service.PulseForegroundService
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel

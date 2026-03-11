@@ -1,4 +1,4 @@
-package com.example.pulse.service
+package com.kadamshubham098.pulse.service
 
 import android.accessibilityservice.AccessibilityService
 import android.os.Build

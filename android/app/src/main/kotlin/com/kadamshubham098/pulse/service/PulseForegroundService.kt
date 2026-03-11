@@ -1,4 +1,4 @@
-package com.example.pulse.service
+package com.kadamshubham098.pulse.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -14,12 +14,12 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
-import com.example.pulse.LockScreenActivity
-import com.example.pulse.MainActivity
-import com.example.pulse.R
-import com.example.pulse.data.AcknowledgementEntity
-import com.example.pulse.data.AppDatabase
-import com.example.pulse.data.SessionEntity
+import com.kadamshubham098.pulse.LockScreenActivity
+import com.kadamshubham098.pulse.MainActivity
+import com.kadamshubham098.pulse.R
+import com.kadamshubham098.pulse.data.AcknowledgementEntity
+import com.kadamshubham098.pulse.data.AppDatabase
+import com.kadamshubham098.pulse.data.SessionEntity
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -260,7 +260,7 @@ class PulseForegroundService : Service() {
         // ONLY if the screen was locked to begin with
         val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         if (keyguardManager.isKeyguardLocked) {
-            com.example.pulse.service.PulseAccessibilityService.lockScreen()
+            PulseAccessibilityService.lockScreen()
         }
         
         // Record Stat
@@ -303,7 +303,7 @@ class PulseForegroundService : Service() {
         // Soft turn off screen via Accessibility (allows fingerprint)
         val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         if (keyguardManager.isKeyguardLocked) {
-            com.example.pulse.service.PulseAccessibilityService.lockScreen()
+            PulseAccessibilityService.lockScreen()
         }
         
         // Record Stat - wasFocusing = false

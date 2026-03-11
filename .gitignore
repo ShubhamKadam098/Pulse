@@ -55,3 +55,4 @@ app.*.map.json
 # Release artifacts (distribute via GitHub Releases, not git)
 *.apk
 *.aab
+docs/
