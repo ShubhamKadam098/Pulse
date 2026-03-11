@@ -1,6 +1,8 @@
 # Pulse
 
-![Pulse logo](logo.png)
+<p align="center">
+  <img src="logo.png" alt="Pulse logo" width="140" />
+</p>
 
 Pulse is a personal focus + “mental exercise” app for Android: set an interval, work until the timer ends, then **physically acknowledge** (or admit a distraction) using the **hardware volume buttons**. It repeats forever until you stop it.
 
@@ -11,10 +13,16 @@ Pulse is a personal focus + “mental exercise” app for Android: set an interv
 - GitHub Releases: publish `app-release.apk` and users can install it (no Flutter needed).
 - Release guide: `RELEASING.md`
 
-<!-- TODO(image): Add a screenshot of the Home screen (idle state with the minute/second picker). -->
-<!-- TODO(image): Add a screenshot of the Home screen while running (countdown + acknowledged/distracted chips). -->
-<!-- TODO(image): Add a screenshot of the Stats screen (cards + weekly bar chart). -->
-<!-- TODO(image): Add a screenshot of the lock-screen “Time’s Up” screen. -->
+## Screenshots
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/ca76b6e5-8e91-429d-b2e8-2ab12c4529c5" width="220" alt="Home (picker)" />
+  <img src="https://github.com/user-attachments/assets/2a395bd1-98d0-43d3-841f-b85bc7a062d3" width="220" alt="Timer running" />
+</p>
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/e0e6f172-7284-481b-be23-1c85c97acf58" width="220" alt="Lock screen prompt" />
+  <img src="https://github.com/user-attachments/assets/1fec2597-27eb-44d9-adff-739981975bcb" width="220" alt="Stats screen" />
+</p>
 
 ## What it does
 
@@ -80,7 +88,3 @@ To use hardware volume buttons, enable the Accessibility Service:
 
 - This is intentionally “hardware-y”, so the Android implementation uses a foreground service, vibration, and an accessibility service (only intercepting volume keys during the “time’s up” vibration phase).
 - If you run into reliability issues on some devices, you may need to manually allow battery optimization exceptions.
-
-## Docs
-
-- `docs/Implementation Plan` — early design notes (some details are outdated vs the current implementation)
