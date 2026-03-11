@@ -33,14 +33,32 @@ jobs:
         run: flutter pub get
 
       - name: Configure Android signing (optional)
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/pulse-release.jks
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "Signing secrets not set; building with debug signing."
+            exit 0
+          fi
+
+          for v in ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then
+              echo "Missing required secret: $v"
+              exit 1
+            fi
+          done
+
+          mkdir -p android
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/pulse-release.jks
+
           cat > android/key.properties <<EOF
-          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
           storeFile=pulse-release.jks
           EOF
 
@@ -59,4 +77,3 @@ jobs:
           files: |
             pulse-${{ github.ref_name }}.apk
             pulse-${{ github.ref_name }}.apk.sha256
-
